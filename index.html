@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="zh-TW" class="h-full">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圍棋官子學習遊戲</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+html, body { height: 100%; margin: 0; padding: 0; background: #fff5f7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+#app { height: 100%; width: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.home-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px 20px 100px 20px; text-align: center; position: relative; overflow-y: auto; }
+.logo { position: absolute; top: 15px; left: 15px; width: 80px; height: 80px; border-radius: 8px; object-fit: contain; }
+.home-title { font-size: 2rem; font-weight: 700; color: #333; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.1); letter-spacing: 1px; }
+.home-subtitle { font-size: 0.95rem; color: #666; margin-bottom: 35px; line-height: 1.6; white-space: pre-line; }
+.difficulty-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 600px; margin-bottom: 30px; }
+.difficulty-description { font-size: 0.75rem; color: #000; margin-top: 6px; font-weight: 400; }
+.home-footer { position: absolute; bottom: 10px; left: 15px; right: 15px; text-align: center; color: #999; font-size: 0.8rem; }
+@media (min-width: 768px) {
+  .home-container { padding: 40px 60px; }
+  .logo { width: 120px; height: 120px; top: 20px; left: 20px; }
+  .home-title { font-size: 3.5rem; letter-spacing: 2px; }
+  .home-subtitle { font-size: 1.3rem; margin-bottom: 50px; }
+  .difficulty-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; max-width: 800px; margin-bottom: 40px; }
+  .difficulty-description { font-size: 0.85rem; margin-top: 8px; }
+  .home-footer { font-size: 1rem; bottom: 20px; }
+}
+.difficulty-btn { padding: 30px 20px; font-size: 2.8rem; font-weight: 600; border: 2px solid transparent; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; background: white; }
+.difficulty-btn:hover { transform: translateY(-4px); border-color: #f44336; }
+.difficulty-btn.beginner { color: #ff9800; }
+.difficulty-btn.normal { color: #4caf50; }
+.difficulty-btn.hard { color: #2196f3; }
+.difficulty-btn.expert { color: #e91e63; }
+.game-container { flex: 1; display: flex; flex-direction: column; padding: 10px; overflow: hidden; }
+.game-header { display: flex; flex-direction: column; gap: 8px; justify-content: space-between; margin-bottom: 8px; padding: 0 5px; flex-shrink: 0; }
+.game-title { font-size: 0.95rem; font-weight: 700; color: #333; }
+.game-stats { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.stat-item { background: rgba(255,255,255,0.1); padding: 6px 10px; border-radius: 6px; color: #666; font-size: 0.7rem; }
+.stat-value { color: #d4a574; font-weight: 700; font-size: 0.9rem; }
+.restart-btn { padding: 6px 10px; background: #d4a574; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; font-size: 0.7rem; white-space: nowrap; }
+.restart-btn:hover { background: #c9956f; transform: scale(1.05); }
+@media (min-width: 768px) {
+  .game-container { padding: 15px 280px; }
+  .game-header { flex-direction: row; gap: 0; }
+  .game-title { font-size: 1.1rem; }
+  .stat-item { padding: 8px 12px; font-size: 0.75rem; }
+  .stat-value { font-size: 0.95rem; }
+  .restart-btn { padding: 8px 12px; font-size: 0.75rem; }
+}
+.progress-bar { width: 100%; height: 6px; background: rgba(0,0,0,0.1); border-radius: 4px; margin-bottom: 12px; overflow: hidden; flex-shrink: 0; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #d4a574, #c9956f); border-radius: 4px; transition: width 0.3s ease; }
+.question-area { background: rgba(255,255,255,0.5); border: 1px solid rgba(255,105,180,0.2); border-radius: 8px; padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; text-align: center; overflow-y: auto; }
+.question-number { font-size: 0.75rem; color: #666; margin-bottom: 6px; flex-shrink: 0; }
+.question-text { font-size: 0.95rem; color: #333; font-weight: 600; margin-bottom: 8px; flex-shrink: 0; }
+.question-image { width: 100%; max-width: 280px; height: auto; border-radius: 6px; margin-bottom: 10px; object-fit: cover; flex-shrink: 0; background: #f0f0f0; min-height: 80px; }
+.options-area { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; width: 100%; flex-shrink: 0; }
+.option-btn { padding: 10px 12px; background: rgba(255,255,255,0.6); border: 2px solid rgba(255,105,180,0.2); border-radius: 6px; color: #333; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-align: left; width: 100%; }
+@media (min-width: 768px) {
+  .question-area { border-radius: 12px; padding: 15px 20px; }
+  .question-number { font-size: 0.8rem; margin-bottom: 10px; }
+  .question-text { font-size: 1.1rem; margin-bottom: 10px; }
+  .question-image { max-width: 340px; border-radius: 8px; margin-bottom: 12px; }
+  .options-area { gap: 12px; }
+  .option-btn { padding: 14px 18px; border-radius: 8px; font-size: 1.15rem; }
+}
+.option-btn:hover:not(:disabled) { background: rgba(255,255,255,0.8); border-color: #ff69b4; transform: translateY(-2px); }
+.option-btn.selected { background: #ff69b4; border-color: #ff69b4; color: white; }
+.option-btn.correct { background: #7cb342; border-color: #7cb342; color: white; }
+.option-btn.incorrect { background: #f44336; border-color: #f44336; color: white; }
+.option-btn:disabled { cursor: not-allowed; }
+.feedback { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; text-align: center; min-height: 50px; display: flex; align-items: center; justify-content: center; }
+.feedback.correct { background: rgba(124,179,66,0.2); color: #7cb342; border: 1px solid #7cb342; }
+.feedback.incorrect { background: rgba(244,67,54,0.2); color: #f44336; border: 1px solid #f44336; }
+.nav-buttons { display: flex; gap: 15px; margin-top: 20px; }
+.nav-btn { flex: 1; padding: 15px; background: #d4a574; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
+.nav-btn:hover { background: #c9956f; transform: translateY(-2px); }
+.result-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; overflow-y: auto; }
+.result-title { font-size: 1.8rem; font-weight: 700; color: #333; margin-bottom: 15px; }
+.result-score { font-size: 2.5rem; font-weight: 700; color: #d4a574; margin-bottom: 10px; }
+.result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px; max-width: 400px; width: 100%; }
+.result-stat { background: rgba(255,255,255,0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,105,180,0.2); }
+.result-stat-label { color: #666; font-size: 0.75rem; margin-bottom: 6px; }
+.result-stat-value { color: #d4a574; font-size: 1.3rem; font-weight: 700; }
+.result-btn { padding: 12px 30px; background: #d4a574; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.3s ease; }
+.result-btn:hover { background: #c9956f; transform: scale(1.05); }
+.result-percentage { color: #a0a9b8; font-size: 0.95rem; margin-bottom: 20px; }
+.img-loading { background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.85rem; }
+</style>
+</head>
+<body class="h-full">
+<div id="app" class="h-full w-full"></div>
+<script>
+const gameConfig = {
+  beginner: {
+    questions: [
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1exWYIqTt9v8CgXB-k8KhdzczyB9qn7q3", options: ["A. 後手⅓目", "B. 後手⅔目", "C. 後手1目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/11R-uudhOya_rz8Satuv4RwTIXlOCQ48N", options: ["A. 後手⅓目", "B. 後手⅔目", "C. 後手1目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1tKc_-vTB7HcnKjGLPFIRGN7LeSwoSLkb", options: ["A. 後手0.5目", "B. 後手1目", "C. 後手2目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1QDfS9gGsTri9MOSlh6x3hbgXYKCyFS4I", options: ["A. 後手0.5目", "B. 後手1目", "C. 後手2目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ZmRexfA03vM_AYsyUivvRH6d712tmHHa", options: ["A. 後手2目", "B. 後手4目", "C. 後手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1IS7ijMTaRC8lzZyh7t9WYntQqoLxutcb", options: ["A. 先手0.5目", "B. 先手1目", "C. 先手2目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1uG3pcIhwm9KexR5b5YNh_3rxHzes0OJU", options: ["A. 先手0.5目", "B. 先手1目", "C. 先手2目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1XCpQsL4ConwrOgHVO5dSYqSBxH3ETUeK", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1BHaiaRfTMUpMLJttE7X0sD2X635Pi76W", options: ["A. 後手7目", "B. 後手7.5目", "C. 後手8目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1yCtIp2bWcOMof3a7204G9ylBNjvtPVIR", options: ["A. 先手0.5目", "B. 先手1目", "C. 先手2目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1wnRfwlNIdlSSTDDOgtS9KAGrmikavn0R", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1y6ssNKQWr4gaVfiiBfHGkrT9n9KoDpWx", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/12uejukLNMWkD7oWpq0M5qOESRwSoLPwW", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Ke232sMmz9IphsUiGDsBMiGOqWlGE9Xh", options: ["A. 後手1目", "B. 後手2目", "C. 後手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1d-EV8XIV-EY-o-yprjz0BKgRYnejJmSJ", options: ["A. 後手1目", "B. 後手1.5目", "C. 後手2目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ybpkfRYKCLPGa0fkc2A-bGfKCWvPdC11", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1vbDhcSUYnNWu596DelPSHQimDEL36SwC", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1drhETeYh4CwxHj08ZlVUoKdQI_WrRQUh", options: ["A. 後手1目", "B. 後手1.5目", "C. 後手2目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1W4zeoK7IimzcC0-ZqLuz0Ew9g_ybv88O", options: ["A. 後手1.5目", "B. 後手2目", "C. 後手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/18wSWLbe1w6jdQmPQJdcqNcAdLJSQq-q1", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1P-yXBKm7ukXrbkfXLXNbGn47bG4xyvqw", options: ["A. 雙先4目", "B. 雙先5目", "C. 雙先6目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1sC5KsAyflxkRUJOvoxQSbKWkHrMClUxJ", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1P1I63_WUv49Sair9rypHq-wUmxbGbBzE", options: ["A. 後手2目", "B. 後手2.5目", "C. 後手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1CsgY8f6kjlGGaD4A3q40xew-HMvyr-0y", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1nCsLdrCEDBbToym7mATOtixmybdM46oR", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ua1hL9hJnUgHLS-40nmhv9nKeW5y5n1o", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1dt19QynMqmWR8L8O4MWQ03h_kNt5ZHni", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1bvr3vjIDpUAXnQxgDJVQtftr8pHa6SRt", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1QjOPA7xWr0OVk-bp8-cgLQpo9fFfF5oZ", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1exWYIqTt9v8CgXB-k8KhdzczyB9qn7q3", options: ["A. 後手⅓目", "B. 後手⅔目", "C. 後手1目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/155agFVrhsWuNBCYmnHUwVxZL4sXQ5i2r", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Bm7VeaM-Zk7cFjD8HHx73VEqsy7XG_vi", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1DCGe20bt-0F0n7f_j2s4HflETs9iTcVP", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1lzu7cMf1fnBOmLYvRHkb2Xiju86zJWo0", options: ["A. 後手1目", "B. 後手1.5目", "C. 後手2目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1U_c5Wio5484O-dx4VbOvgsteCNXefMhj", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/10Ur8ZzW3Tl8ltqzSr2-ZJ_fn6SlBCuH-", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1B92iHtjRxI-27jQSVLXJp8hZVsQi8VOw", options: ["A. 先手5目", "B. 先手6目", "C. 先手7目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Hg9HN8KthntJixV98b-Bh7zFb3u7v9ud", options: ["A. 後手2目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1xZNChJMLTGgXOQe-L_W9nzgaSVEAvwxa", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1pwitu4mV1w0XQEAu8iywmQhsvln5vZ64", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Op6dZyMTwF_9okhUFCjuDJM8RoZ5RdhL", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1NR0teUe_I6Bg8OvAPytKaDsNfHIQUQX_", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1-1jVaPjdeu5fO9LOVpszVCyzfqMagkCo", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1j3ZjNDmCYXI-PGymKYm1KZsbD92xJ8HP", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/16T0TyH4jjwLtUF82vlYsbpaJxcAPDku1", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1zvYzw3AXtDD8QBf2sq_sKfC7lqgatU5K", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1N5cct2Du6Ug9Ds2VKf1n-Bdivq5kmUF2", options: ["A. 先手0.5目", "B. 先手1目", "C. 先手1.5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1eyn_7CuojvO6pr1swH_jFThMdHZO5CyS", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1h-zeEPDwL_k_J6CUDMX35HUk97VclbSI", options: ["A. 後手10目", "B. 後手12目", "C. 後手14目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1_eFTWWDSMg7EtHHMWE0jL7yAw09wL0Ey", options: ["A. 後手12目", "B. 後手13目", "C. 後手14目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Q0X5y5uMYNhzp9d4zoRHw8OHoK7JOn0d", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1bwYcqK7C4h2QrIGH4d7jrd9Tn8pGNkyW", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1vmLHZGAqdpbyW1TAYV2fibMPy6YTr_tp", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1OOpKBU1HiYqK0OyMTYC2Oy29-TjK_QbF", options: ["A. 先手1目", "B. 後手3目", "C. 後手4目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1UqPw7RT4_BdrInTyyiNbg2zQX0iMEOPv", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ruMcQGmdOZCp1WbVgNJikGgLQUW4Stti", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1fvAsFRbKoPO7nHS5EHZiXVVv8RFBMy2b", options: ["A. 先手1目", "B. 後手5目", "C. 後手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/19eagO4-sfGMVirLBvud7tkqNhMxZrbos", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1yES0nbmXFmHpAdL7u_cxZneeezJ11nxm", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1GjPG6t0sVu_YJTvv54WEW-hx_2xe0Y1M", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17z59aYI3DxsGtkRS6kslmA89fJav46oc", options: ["A. 先手4⅔目", "B. 先手5⅓目", "C. 先手5⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1YmF0PUED7MBm_grnKUD6Tk1WVRFxd7g3", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Hks8lAK1HMvevHN9JRiickaa8P6SjlVC", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 1 },
+    ]
+  },
+  normal: {
+    questions: [
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1dXdOK7JZxKgvwpbnDbPs46XMUWmYWYcu", options: ["A. 先手5目", "B. 先手6目", "C. 先手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17iS3ZAQYdCYiUrqIga5oAYdaEIELtfJ7", options: ["A. 後手2⅓目", "B. 後手2⅔目", "C. 後手3目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1c5UETjPrscgDir_0-gg6jI0lzoJLe2WE", options: ["A. 後手6目", "B. 後手8目", "C. 後手9目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/19mnIDVFf9l2low19M1X8tJ8nf81vlni_", options: ["A. 後手6目", "B. 後手8目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1QpvuPshWRu6RYLJTJLhbMsgLXgHSWsua", options: ["A. 後手1⅔目", "B. 後手2目", "C. 後手2⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1zGFYV32iLS1TXoInbOxE_LjRxOmBYdIA", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/12BguC9ee7ebTuEfdVevP3tyhzA3-wLv9", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ka_AXFkSTq7fO3p2rjeR1Em1xFv-6gvh", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1OFnTC9FT_hf68Rhh0HKMAmva6KuYDVBd", options: ["A. 先手3⅓目", "B. 後手7目", "C. 後手8目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/12khJ9cpsCcHjt3cGG5oKa3Pz_3022N1z", options: ["A. 後手10目", "B. 後手12目", "C. 後手14目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Mc827YWyLHLROcF2oYTRsOVUd1BzldDe", options: ["A. 後手10目", "B. 後手12目", "C. 後手14目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17QjXF2k-yblaMNSokXQJuIajAInGnetD", options: ["A. 後手11⅓目", "B. 後手11⅔目", "C. 後手12⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/16RXp9cxwGkoTr2xd-9MqtNgxEANW6pwh", options: ["A. 後手6目", "B. 後手8目", "C. 後手10目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/13v5Eg1jB84EKj_WMWan0OESaOpFvOTQh", options: ["A. 後手10目", "B. 後手12目", "C. 後手14目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1qPRYB4PwidaxC2TrGiEnehm8DXY0gAP9", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Mkfb_O286aEhii8UTWWQmx2rVa_dJQyF", options: ["A. 後手10目", "B. 後手10.5目", "C. 後手11.5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1RX9tiVF9NqE6hwz5o7mMdJYKpkij3WCm", options: ["A. 後手10目", "B. 後手10.5目", "C. 後手11.5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ox7q3ykZ1GpGXQLwCdDypmkhUjmZ6EcG", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1csynv5ANFwbqAUbGRttEGN1XZ-Qmqk7K", options: ["A. 後手6目", "B. 後手6.5目", "C. 後手7目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/13K4eA7WhBNLGnI7cYtjRt-Ga-3xcBOyY", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1430mRXeJ5eFhK7MyuVPSxvhD6qxDkXoQ", options: ["A. 後手3⅔目", "B. 後手4目", "C. 後手4⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/16fBlJ24slznNTxD8TFZWgc_s3WSh70T7", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/10e0iOVXo4cawpaApYK0tEPRVuLGPjt99", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/16ooEuPEhMwLDv7WpgUHyCRxcrru6HuGp", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/15am6aENe71ca55yEBNdMlYFSdeaLy8hu", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1n3NtRTJ7ThvgXRndWCWPEAu_PZ7K6JQb", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1QJguYXCZhjRuNNB5bowAsvOcBf4ts9OH", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1g3hBy17DUEyZNlwcI91DfkWj6VBhQBdE", options: ["A. 先手2目", "B. 先手2.5目", "C. 先手3.5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1_yca4O5Pwk2gTJxwcTbqgKLZ2m0E4JPq", options: ["A. 先手4目", "B. 先手4.5目", "C. 先手5目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1h5ZJEVqXQEwdQRzJ8c2E7cu8YEXLaNZc", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1b2FVTp4BjB6KLX8f-twrZddxRMubwL8I", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1X1_sYFnPQIDmN0kM0ESilKbgm7lakXVh", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1RpEy6U_lBqj_Gz1bvAz3Bq_LC7wfr3q9", options: ["A. 先手5目", "B. 先手6目", "C. 先手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17JYCv3wftyIFzNwy7E2ptF42ExBApQQv", options: ["A. 後手9⅔目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1FRyWYHz7hOTd9eUJHqZ4hR2kDLT8i6_0", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1pk8FuyN3UEZbXrxtaQdVLeV5UqIbdvoH", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1J-xkTsqUXKtDDVvNPE6-uOLvFHzmf0gP", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1TWBPX_TsR_mkeXFbmayA8PsK4p3VTnXr", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Wjgi0xNgMHv3TLJBiMv-tTWRiwBjAs1T", options: ["A. 後手2目", "B. 後手2⅓目", "C. 後手2⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/171CxvbELANXTNooY4Hf773CUvQtnOwkZ", options: ["A. 後手10目", "B. 後手12目", "C. 後手14目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1oA42wqtIP5IgaohKb6z6IEIPUzdhpZpF", options: ["A. 先手2目", "B. 後手5目", "C. 先手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17O-LYVe2dpqjrUTdoxdr1pFp2yXClz7C", options: ["A. 先手12目", "B. 先手13目", "C. 先手14目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1m445fQEPjWxn7nhCqahpiZt4n1Ey2bEZ", options: ["A. 後手4目", "B. 先手2.5目", "C. 先手3目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ih883T4wAiC3ca9HpBIlNmtrzlgFMgpP", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/12WEenNRY6cVoLcku4ytXCXWtNn-FOFQd", options: ["A. 後手14目", "B. 後手15目", "C. 後手16目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Y6JuWmBTSqUFXPoTV7EwflUP9xbWMIZw", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1M9QaA8u_TWluty8v0wSP6pr6yQODDvHu", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1tqCdfr35NbEF_vU6go6LBWjefla1zJft", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1lr0-flBT8DPAQX5krMqTRrxQzkB7fpWA", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1seimMBkYlmJjmnmD6tvwQAbdGLtlvCk8", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1gRPkJ86s2GnJwmKZaDW39OkcKVaRsn6c", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1zbJTZCsiX7cJD6bw9fuFuheKIORApS4y", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1CQTk3IHXLtQNBNCWLGns9bq5Y0fvq1Bc", options: ["A. 後手2⅓目", "B. 後手2⅔目", "C. 後手3⅓目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1shse0U0c4COZQhbpI2uptmClMb0A-nYT", options: ["A. 後手5⅓目", "B. 後手5⅔目", "C. 後手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1_mYtCrzYxbPfFoIlur_UnLmhV52QAjaQ", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1I3kukNRvZzW_QCZpNz9-G9PpMv1Cufx9", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1vo7aQxPXsLWJxCjcurnsdIPIcDGfe06T", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1JAPtraoFmRxd-HBHPcLu8Nc4IrPn7aPE", options: ["A. 先手8目", "B. 先手9目", "C. 先手10目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1-jIZyT3szXtaYJdQqi14H_1fK3xrlfWJ", options: ["A. 先手6目", "B. 先手7目", "C. 先手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1AhuWzVnv7cXBeqjr9TSgeluiwrhcOUIT", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1aNcXcfRg8YDh-zCUoX89qgwYEdrdwIzJ", options: ["A. 先手1目", "B. 後手4目", "C. 先手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1zQXKR4xek0DDEfC4-E80p9mIRqYZPfSK", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1V1ruOyqZeBAS7jRIIya8jsDGL8fEIDQz", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1oH9MfEuj8iZ4d9TqaVQpqT_MoKVKBFqM", options: ["A. 先手6.5目", "B. 先手8目", "C. 先手8.5目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1dX64d8Eh_uhJ1K58RfdP5OwWaZrrLjKa", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Kb4pCqkpBcrm0RRzNbqMUneAGzUyR64q", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/14klK_eCNsI6Hb85v9U0uzGsFGEjBQNSi", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 先手2⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1TvdD_v5Ut5__iaoBm5gPhr9ZzqDYRvBv", options: ["A. 後手2目", "B. 後手2⅓目", "C. 後手2⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ZPacRrUq6b9Yp4ZKpgKQSEYXAV_qyM2w", options: ["A. 後手2目", "B. 後手2⅓目", "C. 後手2⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1nxlDD12KTCEoL3TUXsKRBmS34Gel7z2W", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1sMLZqzJSRg6fzEbSSWhEYMxiSnr9wZHj", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1rNeETRxMvYxvpm3CsP1Alfj5FworLDHv", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 先手2⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/11cvMAtHn6egaDnmI0EjxhVB8NVCJY2cU", options: ["A. 後手8目", "B. 後手9目", "C. 先手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1JqpkwSGSFUwTstwOHAap8LTW1HUbaeBM", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1qmLZ2VYc0d2q2Bs23fBxiqqR1yG7-Hse", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1kC_j22hFp5Kcaa2RvnLSOHGpnvZKfPCA", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 先手2⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Unm_SzvSXq0tWEOTZiJzbEAISrmqvbXL", options: ["A. 先手7目", "B. 先手8目", "C. 先手9目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/12aM2IiMe8wqMfSPptdR4qP38jEsuWDsE", options: ["A. 先手6目", "B. 先手7目", "C. 先手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1jRdqJhr5dJ9R7_f9TmmaA2DyTdLh4_V_", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 先手2⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Xi7JK_UU4iWfuXf7RgftfJZ4Jqxx2WV_", options: ["A. 後手4.5目", "B. 後手5目", "C. 後手5.5目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1nKCw40Lm-FaiC8epRbppWj2DNXGDUbPT", options: ["A. 先手3目", "B. 先手3.5目", "C. 先手4目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/16xV7AzICoQ4wnb9fwmx7Q_6w1vwS9kCH", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1U8MXDwjc0MNF-evewLQ7TAzHjineJ5Lx", options: ["A. 先手6目", "B. 先手6.5目", "C. 先手7目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1OcrxJ6x3g4kd4DG6vd9m9GMDF94ZgNWZ", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1K6jhB7MppzZJnqcHTw01VMAoCSEOUZvZ", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1PkuKTzwJ5DScKwlf4Q2ZWUgaZYpsCofi", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ypXRpw219hs-Q-Nn8I7jZ1BtHBL5fsUu", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1519m_aMfzNLhxJKSBrsSALWnG_1_UPNs", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1hz4TwRcKLI2OebWeNRaA2lv-1cAaQ6tT", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1S-rq-g_ux6NstpU0ZBy2ox_r3JZBWR7h", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1MjW47_IXVlijC_N6TNL3XG_W3OsirDZy", options: ["A. 先手8目", "B. 先手8.5目", "C. 先手9目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/12r_ZV-1YXHcBzz2vhyNNo-XpiuuaYDDy", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1xOJExU6l2P-WtX_gjyO0ryBZzyI8qbi7", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1jIpYdqguaJ6KSqQxCvhUVo10FXJpbTyD", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1XQWp_XBZ3POPc-TxdqXfAuvk35YiAAoU", options: ["A. 先手6目", "B. 先手7目", "C. 先手8目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1sDT0n98hrqO1H9PddfDwJqyUpreUMBuT", options: ["A. 後手8⅔目", "B. 後手9目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1qLxr9N5ES-6wj8pEyaHncxcp2COuE6Zr", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1SZmVgshV_y6QyjBJ2lYaG-v5onxc2ijj", options: ["A. 雙先4目", "B. 雙先5目", "C. 雙先6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1iBA-xd9krlv0sb7-3RagJtE5YDlB4SYC", options: ["A. 先手6目", "B. 先手7目", "C. 先手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1jElxty8zrHpVrVgCVgEbatO49XfN5-sX", options: ["A. 先手10目", "B. 先手11目", "C. 先手12目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1GLWvuCchiH0bxGFoNmEEZHSdV3dVqU4M", options: ["A. 先手5目", "B. 先手5⅓目", "C. 先手5⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1dFZZroXvMjLr38Dl5f2hVEPT1RwB_Uuc", options: ["A. 先手12目", "B. 先手13目", "C. 先手14目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1F0_k0ZMFIZTozi5dCmjrds4dbFkgoL26", options: ["A. 後手7目", "B. 後手7.5目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/14oDUyasbVXfJAxxPhiNMlbd5ecr4a5be", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ghnwxy_2AH0s-4UNrGA6HbRIxbU9lVD8", options: ["A. 先手8目", "B. 先手8.5目", "C. 先手9目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1i7wOE4HfsBWcxZLlS4c-LAEZ8Dw3hZni", options: ["A. 先手6目", "B. 先手7目", "C. 先手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1E7iwmB91oH_43Vf2y6x8VW32F6kofjZD", options: ["A. 先手6目", "B. 先手7目", "C. 先手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1kkhtuusvq4rXNLRuAQWdNq1hD9m7SFpy", options: ["A. 先手5目", "B. 先手6目", "C. 先手7目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1AFWoibSutiH2vIjClq-Va_NtUblpMw8x", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1O9zOfvR8gWUYkK1z6PrF3VRVgWsMi3Rw", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1t3kJpDgVmI1rvcHBnvXsopPySn5QQbWR", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1QPu9hYuU-xaUkUkaVw9_Ox8eckGeqa9y", options: ["A. 後手4目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1E6kbyjfaxaACjQO6JVl3eFaTWxXXhvJV", options: ["A. 後手2⅔目", "B. 後手3⅓目", "C. 後手3⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1L7uskOitKMRMO2WfM-MAd0qpwzpPstXU", options: ["A. 後手7目", "B. 後手9目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1KxOF02fzaIa1biYGAnFUO50n1QbNRNV8", options: ["A. 先手4目", "B. 後手8.5目", "C. 先手5目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1emHr4MZQ46sV3jzISAbOQaDqOaP-_ZoO", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Txg1gVibPkPlFKTfzU_-JaA8kcjfRiZM", options: ["A. 後手15目", "B. 後手16目", "C. 後手16⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1RSCEeCQnhuKUjaeIaXqYKtCgn8iwj2Hw", options: ["A. 後手3⅓目", "B. 後手3⅔目", "C. 後手4⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1yvckFYcN6gb02jKXV1aZfXzmkLB6V5_d", options: ["A. 先手4目", "B. 先手5目", "C. 先手6目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1kfOmirwLBEqfei1NCFJ9CFflRCknZZy_", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1b5kz2kz85cCrKfgeMiImlRFpgIrmlg1z", options: ["A. 後手3⅔目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1DX_IdUsMNtdMnPV3wZahdjS4D3l8YisO", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/11rLgrewAyqrSfTzSx_7kIY6FlDy7FiED", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 先手2⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1OJuoJ-GIY1EJzZRkEYD0dJjagoVa3ZSV", options: ["A. 後手2⅓目", "B. 後手2⅔目", "C. 後手3⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1D5zhs_0tFerAO2w2PgshVJ7gJqICNkea", options: ["A. 後手6⅓目", "B. 後手6⅔目", "C. 後手7⅓目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/13N9kfM3FcVb9fC3CUUJdWw8K3yfWm6ph", options: ["A. 後手5⅓目", "B. 後手5⅔目", "C. 後手6⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1A9NwoSRN9bjs3MctD66Pi9uir0FP1rkO", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1EMN3fRVO0zss7rCiy3ji-7fIv1r86Gem", options: ["A. 後手5目", "B. 後手5.5目", "C. 後手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1UqC2yZ9jXugPmsgiyy9S4UivJacZwcQD", options: ["A. 先手2目", "B. 先手3目", "C. 先手4目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1acNufOsmN2bPmz7Qcs3fUqnfRPCJqwwL", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1IShwUl9xfP460ijvSoGDOSXZ3eRIZiQY", options: ["A. 先手1.5目", "B. 先手2目", "C. 先手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1z1eKgKqQ_er_Uh-NiHWDaCs3LRbq-e-W", options: ["A. 先手1目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1a0CDQAz3jPaouOn7uMBSbtS9ZUXqVYPR", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 先手2⅓目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1pJLceFWc4JxSckWl9sZuA63XlUiBekfb", options: ["A. 後手5目", "B. 後手5.5目", "C. 後手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1znOisBprxUm8d3xsdrwIpcnjQ8pw2tZU", options: ["A. 後手5目", "B. 後手5.5目", "C. 後手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1oKs2s9mgtIeCKBTqA5UsOKEBaYF7bIEj", options: ["A. 後手12.5目", "B. 後手13目", "C. 後手13.5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/15eDwmUHGS95btNZSGgTO5n32_G5DBPpY", options: ["A. 後手9目", "B. 後手9.5目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1lD3taA6pDy91u9dVY7shmYrHyhTzsCC0", options: ["A. 後手14目", "B. 後手15目", "C. 後手16目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1_NehYruuH0kzC6s59pxczEj8A0VfEPHl", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17aHW8zPKTRhlbIgnjR_0yPsGrlzdTgiM", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1AJpvM0N6kHPiNW2emV7gOej4mogTjLkG", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/13fsj5GM6_xAYrDagvtIwjBCJaRg0LZwR", options: ["A. 後手14.5目", "B. 後手15目", "C. 後手15.5目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1aSVjgED9xPiPbuKWtA8KHGDtcNVNYaKK", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ZuKVBlGxp5cnzoqxWKSBtbvcKSkRbH23", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1HUTTwW1sayH9_pj7xS06jZRG3HUBiWY9", options: ["A. 先手2⅔目", "B. 先手3⅓目", "C. 先手3⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1oG0EJizyKX8uRBn99BkudDaqry9lmPlj", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1hOW9TAUV3AyJIejHDChc9LZqGl9_3ArO", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/11ABBq0usNdkNs1EPwetOQemZEcQILPmH", options: ["A. 後手2目", "B. 後手2.5目", "C. 後手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1EEqhE7rZC-FuzU-HOKGjU-Yz-S_c0nvP", options: ["A. 後手2.5目", "B. 後手3目", "C. 後手4目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1gJ3CTHTGo53rTtsViHDt4NoxHvvJblGW", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1k1kFaSAOYabScDyeSdQzjTdohn5WsKH2", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1stgRI_dhq8NTvK_2jzR9wr9VTolNjUdE", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1bgBe80uIuQ9N4bXX_Tr4aWzwYM-P8Kp3", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1A4TbtIpo9Zt1sfG75WekY4diSHA3dQJW", options: ["A. 後手5.5目", "B. 後手6.5目", "C. 後手7目"], correct: 1 },
+    ]
+  },
+  hard: {
+    questions: [
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1wLkGG2AcCjHroa_HqUVdX4HCGdAIzy3z", options: ["A. 後手1⅓目", "B. 後手1⅔目", "C. 後手2目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/158TRZZyboqiWXNDUxkEWh5NCJDFEaYpI", options: ["A. 後手3⅓目", "B. 後手3⅔目", "C. 後手4目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/108Nfa3SABO1kPDj4mrXGv1VKSgTHBu3B", options: ["A. 後手8目", "B. 後手8⅓目", "C. 後手9⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/15tcDVJLlsUj29KPzWJfGlLVcl4SHyIP2", options: ["A. 後手5⅓目", "B. 後手6目", "C. 後手6⅔目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ZjSec9Of2R3lLUKB9yedJe38EDwiqTyM", options: ["A. 後手5目", "B. 後手6目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1FB5buLfozBBqFOo32NPizXbdAIRkddP-", options: ["A. 後手6⅓目", "B. 後手6⅔目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1gyuSyMU_H2ZEcAhWwfusGB8IoL3eaY4E", options: ["A. 後手6⅓目", "B. 後手6⅔目", "C. 後手7⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/18OP9cl7CYNNSr27hN-OMBxHXsQUiiU5g", options: ["A. 先手5目", "B. 先手7目", "C. 雙先2目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1NwDlIeUYVVwIrpF3tsacI2CisqgosiRp", options: ["A. 後手6⅓目", "B. 後手6⅔目", "C. 後手7⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1F2MSQSQ76LmRIOc-_x63UDkJTPVzYXPC", options: ["A. 後手2目", "B. 先手2⅔目", "C. 先手3⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1OKaBedH2T-yr64eWiJ7TKbJuvts4Mrkl", options: ["A. 後手5目", "B. 後手5⅓目", "C. 後手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1mEvZ8_fOuig5ZwduRhUL3E4-yDjx57xx", options: ["A. 雙先3目", "B. 雙先4目", "C. 雙先5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1mor5LEEgmFbOkIIyWtSDEMEGL6JgxXah", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Aob1wIEzuU7gJ2l8cyOj0pLfnS9CMFEx", options: ["A. 後手4⅔目", "B. 後手5⅓目", "C. 後手5⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1SJolZtf-eL-IpM-_NHmS4ykVTEC_K7TT", options: ["A. 後手4⅔目", "B. 後手5⅓目", "C. 後手5⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ev5qeVPM5Va7NqoCku_F5YSC32un3K0n", options: ["A. 後手3⅔目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1fS6wDk06JxN9Snnozcg-PSn_e-O0VL3_", options: ["A. 後手3⅔目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1bH5J7_rfwQTtYGP1E8QECOXp8-aD1lRs", options: ["A. 先手4⅔目", "B. 先手5目", "C. 先手5⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Xi2n3uhIYnIFBPeHS99lifPIsdNF99fK", options: ["A. 後手4⅔目", "B. 後手5⅓目", "C. 後手5⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1JKPVB2mb9IpHoFeTvG_V1rsKcRyh7-Fn", options: ["A. 後手4⅔目", "B. 後手5⅓目", "C. 後手5⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1nIDsNxSvGszGzhwHVcIxAIJ7hQf-tZxO", options: ["A. 後手6⅔目", "B. 後手7⅓目", "C. 後手7⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/16Q3NxONpyKYN2NDvqWUxoepgPVkWKK1t", options: ["A. 後手5⅔目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1y1USdbmqPz3AyWhSYl9cUFpYMhUGh6rH", options: ["A. 後手8目", "B. 後手8⅔目", "C. 後手8⅚目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/10OXXQLb1jvfwUET75erUZ8puO1J1xIAl", options: ["A. 後手4目", "B. 後手4⅔目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1HT5RLTgzfs4H1hFBjmSjjSzwBrDH9ODs", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1tRn-xhQ7WZGCU2fl1EbsOHYA26LrJtax", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 先手2目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/15xd2PMHCeE2qGpnTJjC9WsLti9hn4GPB", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1rYuiJXo_tslwvjK8qmLyUp43vBFffFWS", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 先手2目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1q1LlHl_hZYGT5WoM2SkMMVHtcQJphE9d", options: ["A. 後手9⅓目", "B. 後手9⅔目", "C. 後手8⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1TGzL9f3uB0pgINJnKn62R5e2IgL8Us1p", options: ["A. 後手14⅓目", "B. 後手14⅔目", "C. 後手14⅙目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ELPReOGn3ZjwzXJmPXsTsoMRl8_EeJly", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ej7FpqjBbmMWkEZGaqeH1EuUBay7mu6o", options: ["A. 後手4⅓目", "B. 後手4⅔目", "C. 後手5⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1NYKo2LD-MdwAG_-LaIjfnn1Q8N4YdCcm", options: ["A. 後手7⅓目", "B. 後手7⅔目", "C. 後手8⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1sSl0_bTiDHvrgTe6NF0pn_N07aJRdcln", options: ["A. 後手13⅔目", "B. 後手14⅓目", "C. 後手14⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/12iUXO0bZsUc03_pneCFKKItX3kikuZOR", options: ["A. 後手2⅓目", "B. 後手2⅔目", "C. 後手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1j9f0pr8wP52eXG2uRdF_aJdU_TM6Lg_1", options: ["A. 後手4⅓目", "B. 後手4⅔目", "C. 後手5⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1p6205kG3NpmefbkCrNcEFFGFvR9GJxvU", options: ["A. 後手2目", "B. 後手3目", "C. 後手4目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ZBdhy2OaHX_iwXlcT3IMHhL05o9xp36e", options: ["A. 先手3⅓目", "B. 先手3⅔目", "C. 先手4⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/166kPEZLR_MOzIXM9rPZRyjH92NrujJzG", options: ["A. 後手4⅓目", "B. 後手4⅔目", "C. 後手5⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/10ZZUTkt5ZDDgCpqUGBsZY4XNiYq-CmoE", options: ["A. 後手3⅙目", "B. 後手3⅚目", "C. 後手4⅙目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/11a_bxbllVwVh0hG0tYrFiQn6SdDa5WCV", options: ["A. 後手8⅓目", "B. 後手8⅔目", "C. 後手9⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/10voAoWsgf4yV3Y2uRB4Omw5_txriddQk", options: ["A. 先手1⅓目", "B. 後手3目", "C. 先手1⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/19xWJ6f4VyfObWb9JOxhdm5Q9mhcbpZgX", options: ["A. 後手5⅔目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1cPTZuvA8NP_Wce5WgY06ZpwllfMVs3yJ", options: ["A. 後手8⅓目", "B. 後手9⅓目", "C. 後手9⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/18TJBQ1LZP4ms_rvFQRQBD2bWmR2o4Z5l", options: ["A. 後手15⅙目", "B. 後手15⅓目", "C. 後手15⅚目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1fi_jCGqxlE2P5cSywV7is108iUpkOp1v", options: ["A. 後手13⅓目", "B. 後手14⅙目", "C. 後手14⅓目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/12j2fdOqw2HOzzy-zxPbDYlUjUQa_s2vm", options: ["A. 後手6⅓目", "B. 後手6⅔目", "C. 後手7⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1j1qeHU2zeP1iN-0U6m44XuJ6wh9BI2ls", options: ["A. 先手7⅓目", "B. 先手7⅔目", "C. 先手8⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1q_KTmCwIKnLc7LtBRxC1cvT8skDMlz1c", options: ["A. 後手3⅔目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Ke_JGMMg6MTkie6yg7jVKkjAE6Xd4YhN", options: ["A. 後手9目", "B. 後手9⅓目", "C. 後手9⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1SYcyCyrRjBKQTMka5ckKfTxnCbH0q9Ed", options: ["A. 後手6⅔目", "B. 後手7⅓目", "C. 後手7⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1qFTguduH_H0RmRvLMiBx_qsNH27A3iMo", options: ["A. 後手9⅔目", "B. 後手10⅓目", "C. 後手10⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1zhTkk38jIFes7IJiLQ7F12dEAOMnww5F", options: ["A. 後手10⅓目", "B. 後手10⅔目", "C. 後手11⅓目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1DIYp91VEU49Hw0xxaDqCYV-t60aUpGvJ", options: ["A. 先手1目", "B. 先手1⅓目", "C. 先手1⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Ry19I8kGUm8LkSY4hccbsvzd4IeiugF9", options: ["A. 後手6⅓目", "B. 後手6⅔目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1sb2bb5Kpf0fWlIJSSjftvHMABODAYSdM", options: ["A. 後手4目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1B5UHYfJb0MbwOIfvm4RAY3Ah2rYP6VtP", options: ["A. 後手6目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1KdDuEKBmtugT-gNwFDgJlsOyt2-ExADV", options: ["A. 後手6目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1s_m6CdA07ijxA8m-b-_3l4nbtFzEKW6p", options: ["A. 先手1⅔目", "B. 先手2⅓目", "C. 先手2⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1cws0JQX6As65SLzMD_nh-uu5YrKqQyWl", options: ["A. 後手5⅓目", "B. 後手5⅔目", "C. 先手3目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1aAVM02IIy0rK_BpRqMCPeRTHLTTl2eFM", options: ["A. 後手2⅔目", "B. 後手3⅓目", "C. 後手3⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/11GhI6iUxQAi68H0SW_rMNR5AJrixYSOE", options: ["A. 後手4⅔目", "B. 後手5⅓目", "C. 後手5⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1HjBZ62ieqamTUC_VZUokch0yza8L9A57", options: ["A. 後手4目", "B. 後手5目", "C. 後手6目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1GM_VTbxDr1DJ504GBjxbO3egPG3dZfJM", options: ["A. 後手3⅔目", "B. 後手4目", "C. 後手4⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1d5QcIoMGzx2Smk_cSS_Lm7TfYXj9nX5h", options: ["A. 後手8目", "B. 後手9目", "C. 後手10目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/108XUeegYeTUtohILGk21inehKWM2Ep0n", options: ["A. 後手8目", "B. 先手5目", "C. 先手6目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1cVNzcj8izE6v9Of1OGim72EiS105kH7K", options: ["A. 後手3目", "B. 後手3⅓目", "C. 後手3⅔目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1iuuKH4ykI_lmk_F3Dmde3lAZ1K1_s4ue", options: ["A. 後手4目", "B. 後手6目", "C. 先手4目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1BsmdkhxS9zQk8spRCh56sC_oVNN1dKA3", options: ["A. 後手8⅔目", "B. 後手9⅔目", "C. 後手10目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1kRWjvgnpAwhA1ujrNHfRC3-U9qZavo1V", options: ["A. 後手4目", "B. 後手4.5目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Hej82K5LQOwL-DLc5trygOc3iVs_QsAH", options: ["A. 後手6目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1cKtJY13gr3paWt1EgOzQuHq77X6x-ytF", options: ["A. 後手3⅓目", "B. 後手3⅔目", "C. 後手4⅓目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1q7wxAVvSp9Kwj5Xs_MK9so9sA8Gt7bBI", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1ueBni3OE9VfuUrquskAMt9cV-W-HaFde", options: ["A. 後手16⅓目", "B. 後手16.5目", "C. 後手16⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1yqtx9G6J7yLngyxzNMe1vwnJkRkkmUiI", options: ["A. 後手2目", "B. 後手3⅓目", "C. 後手3⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/135oJJ0luHFUkbNI6H3df5QSDE36vghTF", options: ["A. 後手8⅓目", "B. 後手8⅔目", "C. 後手10目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1gd8O6vtX9N3owIyTWFbTWRVcQMwK5CbR", options: ["A. 後手11⅓目", "B. 後手11⅙目", "C. 後手11¹⁄₁₂目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1sTGCJbFqYZeUeeIRjbBH15-iG_joX0pR", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/16S6OiOzTLfaJ3LwY7ReIRU7cwAg_hq0k", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1k1sYGxoLLCYC56BBdsUmkOv1ze1BTHag", options: ["A. 先手5目", "B. 先手6目", "C. 先手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1PD1Fl8h5Les2u16GSXtCZ-NaNsFH2O-4", options: ["A. 後手6目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1pn638e7mK-PeYJPARdVwdN4dMs-QsZSI", options: ["A. 先手5目", "B. 先手6目", "C. 先手7目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/18ck78F6YngKFrW7_Co3DV8M0uSoXi8p8", options: ["A. 後手4目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17fxOwUpTqRYRaofvh-CUVt3xET6UsDbk", options: ["A. 後手3目", "B. 後手3⅓目", "C. 後手3⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1thX2dcJwNCvEKT5yjQEL33ddpsk5JcUW", options: ["A. 先手5⅓目", "B. 先手5⅔目", "C. 先手6⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1L6UJIWHr-auFPfWTrVSqcPLB8aXsjuXN", options: ["A. 後手6目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1xRexmOBBnKQMdE_dM3BHZ-YQORiON_nB", options: ["A. 後手3⅔目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1RuCJcHeEwIW1CzM88Kd7LvSfY25JrVFk", options: ["A. 後手7目", "B. 後手7⅓目", "C. 後手7⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1HFZXc9QEcpx3bye_cLun0KwExxv7MYwq", options: ["A. 後手4⅙目", "B. 後手4⅓目", "C. 後手4⅚目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Qr6oxrAw5L2M2rR2ckDrTbjK5Se-FtOG", options: ["A. 後手7目", "B. 後手8目", "C. 後手9目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Eji9nYyrV7y7r6fxntpF4XEc3QGBTWL_", options: ["A. 後手3⅔目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1I5xxVpwj1vm2Dp2yFFf-5eQ-wRXCUa-N", options: ["A. 後手5⅓目", "B. 後手5⅔目", "C. 後手6目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1lFM1Sj-vSjNukH3jEMvugd21XaYoGnC6", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/10cPrYHu8zwJPI0IK8s-E52XrRtIGPGQb", options: ["A. 後手5⅔目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1-IFFLmApSiOXhOrLtkxXzr1Yt85iIjfJ", options: ["A. 先手4⅔目", "B. 先手5⅓目", "C. 先手5⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1bC170_9TKzKI1IJctwS-LBWsG9eI_JwL", options: ["A. 後手3⅔目", "B. 後手4⅓目", "C. 後手4⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1c-ybNq8OPQDmDSeg7VX6dC9xN04S47ZJ", options: ["A. 後手2⅓目", "B. 後手2⅔目", "C. 後手3⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1QVxUQodUqpt6hvS9yG9gARrx7PlZABfO", options: ["A. 先手2⅓目", "B. 先手2⅔目", "C. 先手3⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/14OWUAt8jwmvk7Z6korAkDzLiBNtcoaPW", options: ["A. 後手6⅙目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1m88zTfIret-hKDYd76KcCKNkYBh_3per", options: ["A. 先手3目", "B. 先手4目", "C. 先手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1cgz12VkLveaKifD-pWjjw8XM_rFBcIK8", options: ["A. 先手4⅓目", "B. 先手4⅔目", "C. 先手5⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1zt0DY6Q22Nn5L0FgToSSEW3jEP4ijUg7", options: ["A. 後手10⅔目", "B. 後手11⅓目", "C. 後手11⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1819awqtCQE4uDrlkDN-yobVwPYFDOI-7", options: ["A. 先手4⅓目", "B. 先手4⅔目", "C. 先手5⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1o5EMMHoMglREVsOZ5yGZEi6GtejJ4wr7", options: ["A. 後手6目", "B. 後手7目", "C. 後手8目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/19FT6HE2ATvPw79RTL3cTlf2R4a_dM8lr", options: ["A. 後手7⅓目", "B. 後手7⅔目", "C. 後手8⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1VebJunIUI3AGvKllVvXcyBClV22kvqDY", options: ["A. 後手5.5目", "B. 後手5⅔目", "C. 後手6目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1KmC8ymXRBm6Va_EaQJD2erljtN9ydEas", options: ["A. 先手3目", "B. 先手3⅔目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Ia63yyP3W08SR3ztDkOvGkzUSGnvtgVr", options: ["A. 後手4⅓目", "B. 後手4⅔目", "C. 後手5⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1_YIv8mIiWiJxc-9im8IFYyK7G-Jg5SSx", options: ["A. 後手11⅓目", "B. 後手11⅔目", "C. 後手12⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Av-YJukOkjaRjk-VHwrHT3b3Muah33ww", options: ["A. 後手6⅔目", "B. 後手7⅓目", "C. 後手7⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1wi5uZtK-iA05jwHWKfvXXQABGrO8_acf", options: ["A. 後手4⅔目", "B. 後手5⅓目", "C. 後手5⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1bi_6O9q974BubPWZKeQZS0vrnlWUENtT", options: ["A. 後手16目", "B. 後手18目", "C. 後手20目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1roOSojXq62BszA-9E-SEfVYNw1Deefy9", options: ["A. 後手6⅔目", "B. 後手7⅓目", "C. 後手7⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1LlAreqVDgu-lkISm4PKO4XhRrzwUs2Xh", options: ["A. 先手1⅓目", "B. 先手1⅔目", "C. 後手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1BaPaW63KqwlGMA_eabyb7YVMbSg4tf8u", options: ["A. 後手6目", "B. 後手6.5目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1-gpzSyf92S5wUwzFhxLw1jX0vduhVgWA", options: ["A. 後手5⅔目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1RxnpZ-tK3nN5taHbX5dcUAouezDn5ucW", options: ["A. 後手9目", "B. 後手10目", "C. 後手11目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1s_nTXmTlpLltXD463o7W40xP3vFUCiFL", options: ["A. 後手5⅔目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1r2Uym3ctuM0eUmzLE-_a4Z5vq_ryz-BR", options: ["A. 後手12.5目", "B. 後手13目", "C. 後手14.5目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1JkClNTDXh5rVtQdtMnQgGVSfwxNq-RbH", options: ["A. 先手3⅔目", "B. 先手4目", "C. 先手4⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Ku65Tt95Xi-ebM5ntiT9WLSvYZmOZ9N_", options: ["A. 後手5目", "B. 先手3目", "C. 後手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/18Hg-jpmj44WxzRoRKi5elxj6wJS07x5V", options: ["A. 後手5⅔目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1cxQACn-tjiPQo0XL7wfR2zXVLakAEZ2r", options: ["A. 後手2⅙目", "B. 後手2⅓目", "C. 後手2⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1fiaThqWL1dwHAqE00sixfqiRFw5T1bYZ", options: ["A. 先手3⅓目", "B. 先手3⅔目", "C. 先手4目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1dBHWR0dAbU6wxzuIP5CoXWwIGP6PtmFp", options: ["A. 後手9⅔目", "B. 後手10⅓目", "C. 後手10⅔目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1LZ1zg8aBJqXUdGZlQkMtbkzAegvwsiXE", options: ["A. 後手9⅔目", "B. 後手10⅓目", "C. 後手10⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1oGECR-M48SvX-GxYXPKy7irUCr51MKhA", options: ["A. 先手3⅔目", "B. 先手4⅓目", "C. 先手4⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1l28_RcwfE_hM040tW0bKusGYeNeXM_01", options: ["A. 後手8⅓目", "B. 後手8⅔目", "C. 後手9⅓目"], correct: 0 },
+    ]
+  },
+  expert: {
+    questions: [
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1PDv2OA_0F4G85K47TPtXROJ-m1GucoMC", options: ["A. 先手7⅓目", "B. 先手7⅔目", "C. 先手8目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1HFfjdyutuuzMX7VzS8hOfHygb-hzN3X3", options: ["A. 後手7⅓目", "B. 後手7.5目", "C. 後手8目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/18jqh-gkvnVFO_ai9se1Rm9vK8vTgaVgG", options: ["A. 先手4目", "B. 先手4⅓目", "C. 先手4⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1c6DqL3nJTKUHT2gmOH39frGvdmG22Wxw", options: ["A. 先手6⅔目", "B. 先手6⅚目", "C. 先手7⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17aVVTucEZDTrB-mnh2F_E8gftYO6el2S", options: ["A. 後手10目", "B. 後手11目", "C. 後手12目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/150GHshHsiM7lJ3EzWgrVlWz40-ZV1aKg", options: ["A. 先手6目", "B. 先手6.5目", "C. 先手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/19E2ROgx58c9s_Dqgq0mdrNvfiKPBIhve", options: ["A. 先手6⅓目", "B. 先手6⅔目", "C. 先手7⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1o1InTXuPleKg0U-CF7_kSRqdJfFq9Hwr", options: ["A. 後手5⅓目", "B. 後手5⅔目", "C. 後手6⅓目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1xzkbL517qkd3oIFO3rSL5ZOPbGRRhVO-", options: ["A. 後手3目", "B. 後手4目", "C. 後手5目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1NjCCD6WsvIuBXSo18ONTKCJ0DJ5LmRN6", options: ["A. 後手6目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17SEaspchId7gkhgv0bm84jHOEmoYFP5N", options: ["A. 後手6⅔目", "B. 後手7目", "C. 先手3⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1wNAtwtVyaMIT4d6QqSOFnt9IUi2DVeS9", options: ["A. 後手11⅓目", "B. 後手11⅚目", "C. 後手12目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/11AhshV6NeY1u7P_CDmJh-GEOhVAHbNwg", options: ["A. 後手9⅓目", "B. 後手9⅙目", "C. 後手9目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1-28Q2Wfdu-ThfgHgFTLYLSZzvomEEd0B", options: ["A. 後手17⅔目", "B. 後手18⅓目", "C. 後手18⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Gx1_EpKajYalncuYoe0SISU4CBpT_5qo", options: ["A. 後手14⅙目", "B. 後手14⅔目", "C. 後手14⅚目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1o7rRL-g2zyxOmogoh1VJSYsaqxkdr062", options: ["A. 後手12⅙目", "B. 後手12⅔目", "C. 後手12⅚目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/17XdrISeHLAy3-OSvOyT-AcIqVCPYsBxg", options: ["A. 先手6⅓目", "B. 先手6⅔目", "C. 先手7目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1Moquo5C_fF4EnNWAS5cSw7ZeyyLYpbIZ", options: ["A. 後手15⅓目", "B. 後手15⅔目", "C. 後手16⅓目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1aqCX7tX5qTeXolB0VNSMNeTTob5Y5gXQ", options: ["A. 先手8⅔目", "B. 先手9⅓目", "C. 先手9⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1baveJheOXxXaaZkbN8tmjONojyDtILN4", options: ["A. 先手7⅓目", "B. 先手7⅔目", "C. 先手8⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1RD0SW6ZlSYqJUv9EdOslQ28ngGyOImCz", options: ["A. 後手12⅙目", "B. 後手12⅔目", "C. 後手12⅚目"], correct: 0 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1INmQm9-fSK6nNCELneYKaL2d-EaHwSim", options: ["A. 後手8¼目", "B. 後手8.5目", "C. 後手8¾目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1-QUVveA6otT7W2yi1744l9QixsZzdcAP", options: ["A. 後手11⅙目", "B. 後手11⅓目", "C. 後手11⅚目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1gxC_6IBGWRWnphonI7B-9PIFE88LYj9A", options: ["A. 先手2⅓目", "B. 先手2⅙目", "C. 後手5⅙目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1B-jd3CXlgkwqhTXv7RXPJtGhVN1PFLaJ", options: ["A. 後手6目", "B. 後手6⅓目", "C. 後手6⅔目"], correct: 1 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1hrVcLkDLRE226LkBi9RfUkx5Chb92bZt", options: ["A. 後手3⅙目", "B. 後手3⅓目", "C. 後手3⅔目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1qOm5BebXeqlUqEnV2EbQ7xKgsTuvVjwR", options: ["A. 後手13¼目", "B. 後手13¾目", "C. 後手14目"], correct: 2 },
+      { text: "請問這個官子棋型的價值是?", image: "https://lh3.googleusercontent.com/d/1wnL5eMeZspxyRFTvSosvvYiY3JQz6m45", options: ["A. 後手8⅓目", "B. 後手8⅙目", "C. 後手8¹⁄₁₂目"], correct: 2 },
+    ]
+  },
+};
+
+const defaultConfig = {
+  game_title: '🎯 官子價值計算',
+  beginner_name: '入門',
+  normal_name: '普通',
+  hard_name: '高段',
+  expert_name: '職業'
+};
+let config = { ...defaultConfig };
+
+let gameState = {
+  currentPage: 'home',
+  difficulty: null,
+  currentQuestion: 0,
+  score: 0,
+  answered: false,
+  selectedAnswer: null,
+  answers: [],
+  selectedQuestions: []
+};
+
+const app = document.getElementById('app');
+
+function render() {
+  if (gameState.currentPage === 'home') renderHome();
+  else if (gameState.currentPage === 'game') renderGame();
+  else if (gameState.currentPage === 'result') renderResult();
+}
+
+function renderHome() {
+  app.innerHTML = `
+    <div class="home-container">
+      <img src="https://drive.google.com/thumbnail?id=1WDX35C_Dj4wRjzh79Eks02jyzin35U4h&sz=w200" alt="Logo" class="logo" loading="lazy" onerror="this.style.display='none';">
+      <h1 class="home-title">${config.game_title}</h1>
+      <p class="home-subtitle">成為官子達人的必經之路\n請依據官子棋型，算出正確的目數</p>
+      <div class="difficulty-grid">
+        <button class="difficulty-btn beginner" onclick="startGame('beginner')">
+          ${config.beginner_name}<div class="difficulty-description">輕輕鬆鬆、沒有壓力</div>
+        </button>
+        <button class="difficulty-btn normal" onclick="startGame('normal')">
+          ${config.normal_name}<div class="difficulty-description">常見的基礎官子</div>
+        </button>
+        <button class="difficulty-btn hard" onclick="startGame('hard')">
+          ${config.hard_name}<div class="difficulty-description">開始帶有打劫的難題</div>
+        </button>
+        <button class="difficulty-btn expert" onclick="startGame('expert')">
+          ${config.expert_name}<div class="difficulty-description">非常困難、萌新慎入</div>
+        </button>
+      </div>
+      <div class="home-footer">題庫取材自《圍棋極簡官子法》- 青島出版社著</div>
+    </div>
+  `;
+}
+
+function renderGame() {
+  const questions = gameState.selectedQuestions;
+  const question = questions[gameState.currentQuestion];
+  const progress = ((gameState.currentQuestion + 1) / questions.length) * 100;
+  const difficultyNames = {
+    beginner: config.beginner_name,
+    normal: config.normal_name,
+    hard: config.hard_name,
+    expert: config.expert_name
+  };
+  const difficultyName = difficultyNames[gameState.difficulty];
+
+  let optionsHTML = '<div class="options-area">';
+  question.options.forEach((option, index) => {
+    let btnClass = 'option-btn';
+    if (gameState.answered) {
+      if (index === question.correct) btnClass += ' correct';
+      else if (index === gameState.selectedAnswer) btnClass += ' incorrect';
+    } else if (index === gameState.selectedAnswer) {
+      btnClass += ' selected';
+    }
+    optionsHTML += `<button class="${btnClass}" onclick="selectAnswer(${index})" ${gameState.answered ? 'disabled' : ''}>${option}</button>`;
+  });
+  optionsHTML += '</div>';
+
+  let feedbackHTML = '';
+  if (gameState.answered) {
+    if (gameState.selectedAnswer === question.correct) {
+      feedbackHTML = '<div class="feedback correct">✓ 答對了！做得很好！</div>';
+    } else {
+      const correctOpt = question.options[question.correct];
+      feedbackHTML = `<div class="feedback incorrect">✗ 答錯了，正確答案是：${correctOpt}</div>`;
+    }
+  }
+
+  let navButtonsHTML = '';
+  if (gameState.answered) {
+    if (gameState.currentQuestion < questions.length - 1) {
+      navButtonsHTML = '<div class="nav-buttons"><button class="nav-btn" onclick="nextQuestion()">下一題 →</button></div>';
+    } else {
+      navButtonsHTML = '<div class="nav-buttons"><button class="nav-btn" onclick="finishGame()">查看成績 →</button></div>';
+    }
+  }
+
+  app.innerHTML = `
+    <div class="game-container">
+      <div class="game-header">
+        <div class="game-title">🎯 ${difficultyName} - 第 ${gameState.currentQuestion + 1}/${questions.length} 題</div>
+        <div class="game-stats">
+          <div class="stat-item">分數：<span class="stat-value">${gameState.score}/${gameState.answered ? gameState.currentQuestion + 1 : gameState.currentQuestion}</span></div>
+          <button class="restart-btn" onclick="goHome()">🏠 重新開始</button>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${progress}%"></div>
+      </div>
+      <div class="question-area">
+        <div class="question-number">題目 ${gameState.currentQuestion + 1}/${questions.length}</div>
+        <div class="img-wrapper" style="width:100%;max-width:340px;margin-bottom:10px;flex-shrink:0;">
+          <img src="${question.image}" alt="題目圖片" class="question-image" loading="lazy"
+            onerror="this.parentElement.innerHTML='<div style=\'width:100%;min-height:160px;background:#f0f0f0;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#999;font-size:0.85rem;gap:8px;\'><span style=\'font-size:2rem\'>🖼️</span><span>圖片無法顯示</span><span style=\'font-size:0.75rem\'>請確認 Google Drive 檔案已設為公開分享</span></div>'">
+        </div>
+        <div class="question-text">請問這個官子棋型的價值是?</div>
+        ${optionsHTML}
+        ${feedbackHTML}
+        ${navButtonsHTML}
+      </div>
+    </div>
+  `;
+}
+
+function renderResult() {
+  const questions = gameState.selectedQuestions;
+  const totalQuestions = questions.length;
+  const correctAnswers = gameState.answers.filter(a => a).length;
+  const percentage = Math.round((correctAnswers / totalQuestions) * 100);
+  const difficultyNames = {
+    beginner: config.beginner_name,
+    normal: config.normal_name,
+    hard: config.hard_name,
+    expert: config.expert_name
+  };
+  const difficultyName = difficultyNames[gameState.difficulty];
+
+  let emoji = '😅';
+  if (percentage >= 90) emoji = '🏆';
+  else if (percentage >= 70) emoji = '🎉';
+  else if (percentage >= 50) emoji = '👍';
+
+  app.innerHTML = `
+    <div class="result-container">
+      <h1 class="result-title">${emoji} 測驗完成！</h1>
+      <div class="result-score">${correctAnswers}/${totalQuestions}</div>
+      <p class="result-percentage">正確率：${percentage}%</p>
+      <div class="result-stats">
+        <div class="result-stat"><div class="result-stat-label">難度</div><div class="result-stat-value">${difficultyName}</div></div>
+        <div class="result-stat"><div class="result-stat-label">答對</div><div class="result-stat-value">${correctAnswers}</div></div>
+        <div class="result-stat"><div class="result-stat-label">正確率</div><div class="result-stat-value">${percentage}%</div></div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <button class="result-btn" onclick="startGame('${gameState.difficulty}')">再玩一次</button>
+        <button class="result-btn" style="background:#aaa" onclick="goHome()">返回首頁</button>
+      </div>
+    </div>
+  `;
+}
+
+function getRandomQuestions(questions, count = 10) {
+  const shuffled = [...questions].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, questions.length));
+}
+
+function startGame(difficulty) {
+  const allQuestions = gameConfig[difficulty].questions;
+  const selectedQuestions = getRandomQuestions(allQuestions, 10);
+  gameState = {
+    currentPage: 'game',
+    difficulty,
+    currentQuestion: 0,
+    score: 0,
+    answered: false,
+    selectedAnswer: null,
+    answers: [],
+    selectedQuestions
+  };
+  render();
+}
+
+function selectAnswer(index) {
+  if (!gameState.answered) {
+    gameState.selectedAnswer = index;
+    gameState.answered = true;
+    const question = gameState.selectedQuestions[gameState.currentQuestion];
+    if (index === question.correct) {
+      gameState.score++;
+      gameState.answers.push(true);
+    } else {
+      gameState.answers.push(false);
+    }
+    render();
+  }
+}
+
+function nextQuestion() {
+  gameState.currentQuestion++;
+  gameState.answered = false;
+  gameState.selectedAnswer = null;
+  render();
+}
+
+function finishGame() {
+  gameState.currentPage = 'result';
+  render();
+}
+
+function goHome() {
+  gameState = { currentPage: 'home', difficulty: null, currentQuestion: 0, score: 0, answered: false, selectedAnswer: null, answers: [], selectedQuestions: [] };
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
